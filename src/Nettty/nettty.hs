@@ -33,6 +33,7 @@ main :: IO ()
 main = do
   hSetBuffering stdin NoBuffering
   hSetBuffering stdout NoBuffering
+  hSetBuffering stderr LineBuffering
   hSetBinaryMode stdin True
   hSetBinaryMode stdout True
   forkWait start

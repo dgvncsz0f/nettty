@@ -74,14 +74,14 @@ iothread h p = forkIO (copy stdin (pIfh p)) >>= stg1
                       hFlush stdout
                       stg1 t
               Just Ready
-                -> do debugMany [masterToken, show Ready]
+                -> do notice masterToken $ show Ready
                       killThread t
                       hClose stdin
                       stg2
               _ -> error "what?"
 
           enqueue (Term chan)   = do
-            debugMany [masterToken, "iothread: ", show (Term chan)]
+            notice masterToken $ "iothread: " ++ show (Term chan)
             _ <- termQ p chan
             return ()
           enqueue (Recv chan m) = atomically $ do
@@ -92,7 +92,7 @@ iothread h p = forkIO (copy stdin (pIfh p)) >>= stg1
           stg2 = supervise $ do
             line <- B.hGetLine h
             case (load line) of
-              Nothing  -> debugMany [masterToken, "error parsing line", show line]
+              Nothing  -> warning masterToken $ "error parsing line" ++ show line
               Just chk -> enqueue chk
 
 fromProcess :: (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle) -> IO Proxy
@@ -127,7 +127,7 @@ nextchan p = atomically $ do
 
 send :: Proxy -> Message -> IO ()
 send p m@(Term _) = do
-  debugMany [masterToken, "send: ", show m]
+  notice masterToken $ "send: " ++ show m
   B.hPut (pIfh p) (dump m)
 send p m          = B.hPut (pIfh p) (dump m)
 
@@ -144,7 +144,7 @@ recvmsg p chan = atomically $ do
 open :: Proxy -> Endpoint -> IO Channel
 open p endpoint = do
   chan <- nextchan p
-  debugMany [masterToken, show (Open chan endpoint)]
+  notice masterToken $ show (Open chan endpoint)
   send p (Open chan endpoint)
   return chan
 

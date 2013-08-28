@@ -42,5 +42,6 @@ main = do
   hSetBuffering fh NoBuffering
   hSetBuffering stdin NoBuffering
   hSetBuffering stdout NoBuffering
+  hSetBuffering stderr LineBuffering
   B.hPutStr fh (pack $ e ++ "\n")
   forkWait2 (copy stdin fh) (copy fh stdout)

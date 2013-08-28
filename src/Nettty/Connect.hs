@@ -45,43 +45,17 @@ import           Control.Concurrent
 import           Network.Socket.Options
 import           Control.Concurrent.STM
 
-newtype Connections = Connections { conns :: TVar (M.IntMap (Socket, Int)) }
+newtype Connections = Connections { conns :: TVar (M.IntMap Socket) }
 
 start :: IO ()
 start = do
   c <- fmap Connections (newTVarIO M.empty)
-  _ <- forkIO (supervise $ rungc c >> sleep 1)
   B.hPut stdout (dump Ready)
   iothread c
 
-expired :: (Socket, Int) -> Bool
-expired (_, t) = t < 0
-
-defTTL :: Int
-defTTL = 60
-
-setTTL :: Int -> (Socket, Int) -> (Socket, Int)
-setTTL t (h, _) = (h, t)
-
-decTTL :: (Socket, Int) -> (Socket, Int)
-decTTL (h, t) = (h, t-1)
-
-expire :: Connections -> IO [Int]
-expire c = atomically $ do
-  (dead, alive) <- fmap (M.partition expired) (readTVar (conns c))
-  writeTVar (conns c) (M.map decTTL alive)
-  return (M.keys dead)
-
-rungc :: Connections -> IO ()
-rungc c = expire c >>= mapM_ (purge . Channel)
-    where purge chan = do
-            let m = Term chan
-            exec c m
-            sendmsg m
-
 sendmsg :: Message -> IO ()
 sendmsg m@(Term _) = do
-  debugMany [slaveToken, "sendmsg: ", show m]
+  notice slaveToken $ "sendmsg: " ++ show m
   B.hPut stdout (dump m)
 sendmsg m          = B.hPut stdout (dump m)
 
@@ -91,26 +65,28 @@ iothread c = supervise $ do
   when (isJust mchunk) (exec c (fromJust mchunk))
 
 select :: Connections -> Channel -> STM (Maybe Socket)
-select c k = do
-  m <- readTVar (conns c)
-  writeTVar (conns c) (M.alter (fmap (setTTL defTTL)) (ch k) m)
-  return (fmap fst $ M.lookup (ch k) m)
+select c k = fmap (M.lookup (ch k)) (readTVar (conns c))
 
 destroy :: Connections -> Channel -> STM (Maybe Socket)
 destroy c k = do
   m <- readTVar (conns c)
   writeTVar (conns c) (M.delete (ch k) m)
-  return (fmap fst $ M.lookup (ch k) m)
+  return (M.lookup (ch k) m)
 
-term :: Connections -> Channel -> IO Bool
-term c chan = do
+termQ :: Connections -> Channel -> IO Bool
+termQ c chan = do
   mfh <- atomically $ destroy c chan
-  when (isJust mfh) (ioclose (fromJust mfh))
+  when (isJust mfh) (sClose (fromJust mfh))
   return (isJust mfh)
+
+term :: Connections -> Channel -> IO ()
+term c chan = do
+  ok <- termQ c chan
+  when ok (sendmsg (Term chan))
 
 exec :: Connections -> Message -> IO ()
 exec c m@(Open chan (EndpointTCP host port)) = do
-  debugMany [slaveToken, "iothread: ", show m]
+  notice slaveToken $ "iothread: " ++ show m
   proto <- getProtocolNumber "tcp"
   sh    <- bracketOnError
              (socket AF_INET Stream proto)
@@ -120,12 +96,12 @@ exec c m@(Open chan (EndpointTCP host port)) = do
                  addr <- getHostByName host
                  connect sh (SockAddrInet port (hostAddress addr))
                  return sh)
-  _  <- forkIO (copyWith (dump . Recv chan) sh stdout `catch` ignore)
-  atomically $ modifyTVar (conns c) (M.insert (ch chan) (sh, defTTL))
+  _  <- forkFinally (copyWith (dump . Recv chan) sh stdout) (\_ -> term c chan)
+  atomically $ modifyTVar (conns c) (M.insert (ch chan) sh)
   return ()
 exec c m@(Term chan)          = do
   _ <- term c chan
-  debugMany [slaveToken, "iothread: ", show m]
+  notice slaveToken $ "iothread: " ++ show m
 exec c (Send chan msg)       = do
   mfh <- atomically $ select c chan
   when (isJust mfh) (iowrite (fromJust mfh) msg)

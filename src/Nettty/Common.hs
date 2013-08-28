@@ -41,10 +41,10 @@ class HasIO a where
   ioclose :: a -> IO ()
 
 masterToken :: String
-masterToken = "master/"
+masterToken = "proxy /"
 
 slaveToken :: String
-slaveToken = " slave/"
+slaveToken = "nettty/"
 
 copy :: (HasIO fh0, HasIO fh1) => fh0 -> fh1 -> IO ()
 copy = copyWith id
@@ -83,13 +83,6 @@ forkWait2 io1 io2 = do
   _    <- forkFinally io2 (\_ -> signal lock)
   replicateM_ 2 (consume lock)
 
-debug :: String -> IO ()
-debug s = debugMany [s]
-
-debugMany :: [String] -> IO ()
-debugMany msg0 = hPutStrLn stderr msg
-    where msg = filter (/= '\n') (concat $ "[DEBUG] " : msg0)
-
 sleep :: Int -> IO ()
 sleep s = threadDelay (s * 1000 * 1000)
 
@@ -100,6 +93,15 @@ supervise :: IO () -> IO ()
 supervise io = mask $ \restore -> do
   restore io `catch` ignore
   supervise io
+
+debug :: String -> String -> IO ()
+debug f m = hPutStr stderr ("D" ++ f ++ ": ") >> hPutStrLn stderr (filter (/='\n') m)
+
+notice :: String -> String -> IO ()
+notice f m = hPutStr stderr ("N" ++ f ++ ": ")  >> hPutStrLn stderr (filter (/='\n') m)
+
+warning :: String -> String -> IO ()
+warning f m = hPutStr stderr ("W" ++ f ++ ": ") >> hPutStrLn stderr (filter (/='\n') m)
 
 instance HasIO Handle where
 

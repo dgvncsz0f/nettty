@@ -51,6 +51,7 @@ main = do
   when there (removeFile xfile)
   hSetBuffering stdin NoBuffering
   hSetBuffering stdout NoBuffering
+  hSetBuffering stderr LineBuffering
   hSetBinaryMode stdin True
   hSetBinaryMode stdout True
   (cmd:args) <- fmap tail getArgs
