@@ -63,12 +63,12 @@ version using the stdin/stdout:
   #                                     ~~~~~~~~~~~
   $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty $(echo tcp://%h:%p | sed s/.u$//)' B
 
-  # we can have also open multiple sessions
+  # yes, we can open multiple sessions
   $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty $(echo tcp://%h:%p | sed s/.u$//)' C
 
-The ``netty-proxy`` command spawn a process which is supposed to start
-the ``nettty`` process. The later listen for commands on stdin and
-replies back on stdout.
+The ``netty-proxy`` command spawns a process which is supposed to
+start the ``nettty`` process. The later listens for commands on stdin
+and replies back on stdout.
 
 The ``nettty-connect`` is just like ``netcat``, but upon connection it
 sends the endpoint you want to connect to. Holly crap!
@@ -79,16 +79,16 @@ nettty protocol
 It is a text protocol, with four messages:
 ::
 
-  # creates a new connection
+  # creates a new connection (to a server)
   # -> nettty/open <channel[int32]> <endpoint[string]>
 
-  # sends data to the connection pointed by a channel (base64-encoded)
+  # sends data to the server
   # -> nettty/send <channel> <data>
 
-  # this are written when the peer has sent some data
+  # sends data to the client
   # -> nettty/recv <channel> <data>
 
-  # and this closes the connection
+  # closes the connection
   # -> nettty/term <channel>
 
 Example:
@@ -103,8 +103,8 @@ This performs an ``GET / HTTP/1.0`` and closes the connection.
   # -> nettty/recv 0 SFRUUC8xLjEgMjAwIE9LDQpTZXJ2ZXI6IG5naW54LzEuMi4xDQpEYXRlOiBXZWQsIDI4IEF1ZyAyMDEzIDEyOjI4OjIyIEdNVA0KQ29udGVudC1UeXBlOiB0ZXh0L2h0bWwNCkNvbnRlbnQtTGVuZ3RoOiAxNTENCkxhc3QtTW9kaWZpZWQ6IE1vbiwgMDQgT2N0IDIwMDQgMTU6MDQ6MDYgR01UDQpDb25uZWN0aW9uOiBjbG9zZQ0KQWNjZXB0LVJhbmdlczogYnl0ZXMNCg0KPGh0bWw+CjxoZWFkPgo8dGl0bGU+V2VsY29tZSB0byBuZ2lueCE8L3RpdGxlPgo8L2hlYWQ+Cjxib2R5IGJnY29sb3I9IndoaXRlIiB0ZXh0PSJibGFjayI+CjxjZW50ZXI+PGgxPldlbGNvbWUgdG8gbmdpbnghPC9oMT48L2NlbnRlcj4KPC9ib2R5Pgo8L2h0bWw+Cg==
   # -> nettty/term 0
 
-The ``nettty-proxy`` simply exposes an TCP interface to this, which ``netty-connect`` makes use of:
-::
+The ``nettty-proxy`` simply exposes a TCP interface to this, which
+``netty-connect`` makes use of: ::
 
   $ nettty-proxy /tmp/nettty nettty
   $ echo -ne "GET / HTTP/1.0\r\n\r\n" | nettty-connect /tmp/nettty tcp://c0d3.xxx:80
