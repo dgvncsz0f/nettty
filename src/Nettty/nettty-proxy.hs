@@ -30,7 +30,6 @@ module Main where
 import Network
 import System.IO
 import Nettty.Proxy
-import Control.Monad
 import Nettty.Server
 import System.Directory
 import Control.Concurrent
@@ -44,11 +43,14 @@ thereAndSocket f = do
     True  -> fmap isSocket (getFileStatus f)
     False -> return False
 
+readInt :: String -> Int
+readInt = read
+
 main :: IO ()
 main = do
-  xfile <- fmap (!! 0) getArgs
-  there <- thereAndSocket xfile
-  when there (removeFile xfile)
+  port  <- fmap (readInt . (!! 0)) getArgs
+  -- there <- thereAndSocket xfile
+  -- when there (removeFile xfile)
   hSetBuffering stdin NoBuffering
   hSetBuffering stdout NoBuffering
   hSetBuffering stderr LineBuffering
@@ -56,5 +58,5 @@ main = do
   hSetBinaryMode stdout True
   (cmd:args) <- fmap tail getArgs
   p          <- nettty (proc cmd args)
-  _          <- forkIO (start p (UnixSocket xfile))
+  _          <- forkIO (start p (PortNumber (fromIntegral port)))
   wait p

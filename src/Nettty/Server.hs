@@ -39,12 +39,18 @@ import qualified Data.ByteString as B
 import           Control.Exception
 import           Control.Concurrent
 
+readUntilEmpty :: Handle -> IO ()
+readUntilEmpty fh = do
+  line <- B.hGetLine fh
+  when (line /= "\r" && line /= "") (readUntilEmpty fh)
+
 ioloop :: Proxy -> Handle -> IO ()
 ioloop p fh = do
   header <- B.hGetLine fh
   case (loadE header) of
     Nothing -> B.hPut fh "ERROR: bad endpoint"
     Just e  -> do
+      when (isHttpConnect e) (readUntilEmpty fh)
       chan <- open p e
       forkWait2 (proxyFrom fh p chan) (proxyTo p chan fh)
 

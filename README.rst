@@ -53,18 +53,19 @@ Instead of relying on ssh builtin port forward, we've built our own
 version using the stdin/stdout:
 ::
 
-  #              unix socket
-  #              ~~~~~~~~~~~  command to spawn
-  #                          ~~~~~~~~~~~~~~~~~~
-  $ nettty-proxy /tmp/nettty ssh -N -f A nettty
+  #              binds to local
+  #              tcp port
+  #              ~~~~~~~~~~~~~   command to spawn
+  #                             ~~~~~~~~~~~~~~~~~~
+  $ nettty-proxy 1080           ssh -N -f A nettty
 
-  #                                     netty-proxy
-  #                                     unix socket
-  #                                     ~~~~~~~~~~~
-  $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty tcp://%h:%p' B
+  #                                    connects to
+  #                                    local port
+  #                                    ~~~~~~~~~~~
+  $ ssh -o 'ProxyCommand nettty-connect 1080       tcp://%h:%p' B
 
-  # yes, we can open multiple sessions
-  $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty tcp://%h:%p' C
+  # now using netcat instead of our own client
+  $ ssh -o 'ProxyCommand nc -XCONNECT -xlocalhost:1080 %h %p' C
 
 The ``netty-proxy`` command spawns a process which is supposed to
 start the ``nettty`` process. The later listens for commands on stdin
@@ -106,7 +107,7 @@ This performs an ``GET / HTTP/1.0`` and closes the connection.
 The ``nettty-proxy`` simply exposes a TCP interface to this, which
 ``netty-connect`` makes use of: ::
 
-  $ nettty-proxy /tmp/nettty nettty
+  $ nettty-proxy 1080 nettty
   $ echo -ne "GET / HTTP/1.0\r\n\r\n" | nettty-connect /tmp/nettty tcp://c0d3.xxx:80
   HTTP/1.1 200 OK
   ...

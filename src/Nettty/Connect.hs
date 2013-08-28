@@ -85,7 +85,7 @@ term c chan = do
   when ok (sendmsg (Term chan))
 
 exec :: Connections -> Message -> IO ()
-exec c m@(Open chan (EndpointTCP host port)) = do
+exec c m@(Open chan (TCP host port))           = do
   notice slaveToken $ "iothread: " ++ show m
   proto <- getProtocolNumber "tcp"
   sh    <- bracketOnError
@@ -99,10 +99,13 @@ exec c m@(Open chan (EndpointTCP host port)) = do
   _  <- forkFinally (copyWith (dump . Recv chan) sh stdout) (\_ -> term c chan)
   atomically $ modifyTVar (conns c) (M.insert (ch chan) sh)
   return ()
-exec c m@(Term chan)          = do
+exec c m@(Term chan)                           = do
   _ <- term c chan
   notice slaveToken $ "iothread: " ++ show m
-exec c (Send chan msg)       = do
+exec c (Send chan msg)                         = do
   mfh <- atomically $ select c chan
   when (isJust mfh) (iowrite (fromJust mfh) msg)
-exec _ _                     = return ()
+exec c (Open chan (HTTPConnect host port))     = do
+  sendmsg (Recv chan "HTTP/1.0 200 OK\r\n\r\n")
+  exec c (Open chan (TCP host port))
+exec _ _                                       = return ()

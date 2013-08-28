@@ -35,9 +35,12 @@ module Nettty.Protocol
        , loadE
        , load
        , dump
+       , isHttpConnect
        ) where
 
+import           Data.Word
 import           Data.Monoid
+import           Control.Monad
 import           Network.Socket (PortNumber ())
 import           Data.Attoparsec as P
 import qualified Data.ByteString as B
@@ -53,7 +56,8 @@ magic = "# -> nettty/"
 
 newtype Channel = Channel { ch :: Int }
 
-data Endpoint = EndpointTCP String PortNumber
+data Endpoint = TCP String PortNumber
+              | HTTPConnect String PortNumber
 
 data Message = Open Channel Endpoint
              | Send Channel B.ByteString
@@ -61,16 +65,38 @@ data Message = Open Channel Endpoint
              | Term Channel
              | Ready
 
+isHttpConnect :: Endpoint -> Bool
+isHttpConnect (HTTPConnect _ _) = True
+isHttpConnect _                 = False
+
 pChan :: Parser Channel
 pChan = fmap Channel decimal
 
-pEndpoint :: Parser Endpoint
-pEndpoint = do
+pNativeEndpoint :: Parser Endpoint
+pNativeEndpoint = do
   _    <- string "tcp://"
   host <- fmap unpack (P.takeWhile (/= 0x3a))
   _    <- P.word8 0x3a
   port <- decimal
-  return (EndpointTCP host port)
+  return (TCP host port)
+
+maybeChar :: Word8 -> Parser ()
+maybeChar w0 = do
+  w <- peekWord8
+  when (w == Just w0) (anyChar >> return ())
+
+pConnectEndpoint :: Parser Endpoint
+pConnectEndpoint = do
+  _    <- string "CONNECT "
+  host <- fmap unpack (P.takeWhile (/= 0x3a))
+  _    <- P.word8 0x3a
+  port <- decimal
+  _    <- string " HTTP/1.0"
+  _    <- maybeChar 0x0d
+  return (HTTPConnect host port)
+
+pEndpoint :: Parser Endpoint
+pEndpoint = pNativeEndpoint <|> pConnectEndpoint
 
 pOpen :: Parser Message
 pOpen = do
@@ -112,11 +138,17 @@ bChannel :: Channel -> Builder
 bChannel chan = string7 (show $ ch chan)
 
 bEndpoint :: Endpoint -> Builder
-bEndpoint (EndpointTCP host port) =
+bEndpoint (TCP host port) =
   (  string7 "tcp://" 
   <> string7 host
   <> char7 ':'
   <> string7 (show $ toInteger port))
+bEndpoint (HTTPConnect host port) =
+  (  string7 "CONNECT "
+  <> string7 host
+  <> char7 ':'
+  <> string7 (show $ toInteger port)
+  <> string7 " HTTP/1.0")
 
 dump :: Message -> B.ByteString
 dump = toStrict . toLazyByteString . bMessage
