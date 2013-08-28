@@ -74,6 +74,16 @@ and replies back on stdout.
 The ``nettty-connect`` is just like ``netcat``, but upon connection it
 sends the endpoint you want to connect to. Holly crap!
 
+You can also emulate SSH port forwarding feature. For instance, the
+following:
+::
+  $ ssh -L 4443:B:443 A
+
+can be accomplished with:
+::
+  $ nettty-proxy 1080 ssh A nettty
+  $ socat TCP-LISTEN:4443 PROXY:localhost:B:443,proxyport=1080
+
 nettty protocol
 ===============
 
