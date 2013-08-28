@@ -61,10 +61,10 @@ version using the stdin/stdout:
   #                                     netty-proxy
   #                                     unix socket
   #                                     ~~~~~~~~~~~
-  $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty $(echo tcp://%h:%p | sed s/.u$//)' B
+  $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty tcp://%h:%p' B
 
   # yes, we can open multiple sessions
-  $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty $(echo tcp://%h:%p | sed s/.u$//)' C
+  $ ssh -o 'ProxyCommand nettty-connect /tmp/nettty tcp://%h:%p' C
 
 The ``netty-proxy`` command spawns a process which is supposed to
 start the ``nettty`` process. The later listens for commands on stdin
