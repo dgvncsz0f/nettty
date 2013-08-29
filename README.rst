@@ -74,7 +74,34 @@ and replies back on stdout.
 The ``nettty-connect`` is just like ``netcat``, but upon connection it
 sends the endpoint you want to connect to. Holly crap!
 
-You can also emulate SSH port forwarding feature. For instance, the
+examples
+========
+
+ssh + proxy command
+-------------------
+
+Simply use netcat or netty-connect. This example assumes nettty is
+running on 1080:
+::
+
+  ssh -o 'ProxyCommand nc -XCONNECT -xlocalhost:1080 %h %p' ...
+  ssh -o 'ProxyCommand nettty-connect 1080 tcp://%h:%p' ...
+
+proxychains
+-----------
+
+It also works with proxychains. Simply register a new http proxy:
+::
+  $ cat >~/.proxychains/proxychains.conf
+  [ProxyList]
+  http localhost 1080
+  
+  $ proxychains curl http://remote-host
+
+port forwarding
+---------------
+
+You can also emulate SSH port forwarding feature using socat. For instance, the
 following:
 ::
   $ ssh -L 4443:B:443 A
@@ -122,8 +149,6 @@ The ``nettty-proxy`` simply exposes a TCP interface to this, which
   HTTP/1.1 200 OK
   ...
 
-That's the idea. :-)
-
 license
 =======
 
@@ -133,3 +158,8 @@ author
 ======
 
 dgvncsz0f
+
+compiling
+=========
+
+TODO:cabal
