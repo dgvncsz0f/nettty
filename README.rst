@@ -26,13 +26,13 @@ firewall is everywhere:
                       +--------->+       |
                                  +-------+  
 
-This is problem:
+This is the problem (I must use A in order to reach B):
 ::
 
   local $ ssh A
   A $ ssh B
 
-This is an viable solution, but suppose is currently unavailable:
+This is a viable solution, but suppose is currently unavailable:
 ::
 
   local $ ssh -D 1080 -N -f A
