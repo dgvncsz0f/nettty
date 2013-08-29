@@ -60,7 +60,7 @@ sendmsg m@(Term _) = do
 sendmsg m          = B.hPut stdout (dump m)
 
 iothread :: Connections -> IO ()
-iothread c = supervise $ do
+iothread c = superviseSentinel (fmap not (hIsEOF stdin)) $ do
   mchunk <- fmap load B.getLine
   when (isJust mchunk) (exec c (fromJust mchunk))
 

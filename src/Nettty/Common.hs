@@ -94,6 +94,11 @@ supervise io = mask $ \restore -> do
   restore io `catch` ignore
   supervise io
 
+superviseSentinel :: IO Bool -> IO () -> IO ()
+superviseSentinel test io = mask $ \restore -> do
+  restore io `catch` ignore
+  test >>= flip when (superviseSentinel test io)
+
 debug :: String -> String -> IO ()
 debug f m = hPutStr stderr ("D" ++ f ++ ": ") >> hPutStrLn stderr (filter (/='\n') m)
 
