@@ -1,7 +1,7 @@
 nettty
 ======
 
-Network over (t̶t̶y̶) stdin/stdout
+Network over (t̶t̶y̶) stdio
 
 the problem
 ===========
