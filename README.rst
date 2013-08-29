@@ -71,8 +71,14 @@ The ``netty-proxy`` command spawns a process which is supposed to
 start the ``nettty`` process. The later listens for commands on stdin
 and replies back on stdout.
 
-The ``nettty-connect`` is just like ``netcat``, but upon connection it
-sends the endpoint you want to connect to. Holly crap!
+Note that ``netty-connect`` is not really necessary. As
+``netty-proxy`` is able to proxy connections using *HTTP* *CONNECT*
+method you have many choices of clients to use: ``netcat``, ``socat``,
+``proxychains`` and so on.
+
+This magic happens only if you invoke ``nettty`` remotely over a ssh
+connection. This allows ``nettty-proxy`` to proxy connections using
+the remote server network.
 
 examples
 ========
@@ -140,14 +146,6 @@ This performs an ``GET / HTTP/1.0`` and closes the connection.
   # -> nettty/send 0 R0VUIC8gSFRUUC8xLjANCg0K
   # -> nettty/recv 0 SFRUUC8xLjEgMjAwIE9LDQpTZXJ2ZXI6IG5naW54LzEuMi4xDQpEYXRlOiBXZWQsIDI4IEF1ZyAyMDEzIDEyOjI4OjIyIEdNVA0KQ29udGVudC1UeXBlOiB0ZXh0L2h0bWwNCkNvbnRlbnQtTGVuZ3RoOiAxNTENCkxhc3QtTW9kaWZpZWQ6IE1vbiwgMDQgT2N0IDIwMDQgMTU6MDQ6MDYgR01UDQpDb25uZWN0aW9uOiBjbG9zZQ0KQWNjZXB0LVJhbmdlczogYnl0ZXMNCg0KPGh0bWw+CjxoZWFkPgo8dGl0bGU+V2VsY29tZSB0byBuZ2lueCE8L3RpdGxlPgo8L2hlYWQ+Cjxib2R5IGJnY29sb3I9IndoaXRlIiB0ZXh0PSJibGFjayI+CjxjZW50ZXI+PGgxPldlbGNvbWUgdG8gbmdpbnghPC9oMT48L2NlbnRlcj4KPC9ib2R5Pgo8L2h0bWw+Cg==
   # -> nettty/term 0
-
-The ``nettty-proxy`` simply exposes a TCP interface to this, which
-``netty-connect`` makes use of: ::
-
-  $ nettty-proxy 1080 nettty
-  $ echo -ne "GET / HTTP/1.0\r\n\r\n" | nettty-connect /tmp/nettty tcp://c0d3.xxx:80
-  HTTP/1.1 200 OK
-  ...
 
 license
 =======
