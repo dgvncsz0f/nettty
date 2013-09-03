@@ -102,7 +102,7 @@ It also works with proxychains. Simply register a new http proxy:
   [ProxyList]
   http localhost 1080
   
-  $ proxychains curl http://remote-host
+  $ proxychains wget http://remote-host
 
 port forwarding
 ---------------
