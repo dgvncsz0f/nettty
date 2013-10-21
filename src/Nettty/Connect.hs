@@ -88,19 +88,15 @@ exec :: Connections -> Message -> IO ()
 exec c m@(Open chan (TCP host port))           = do
   notice slaveToken $ "iothread: " ++ show m
   proto <- getProtocolNumber "tcp"
-  sh    <- bracketOnError
-             (socket AF_INET Stream proto)
-             sClose
-             (\sh -> do
-                 setLinger sh (Just 1)
-                 addr <- getHostByName host
-                 connect sh (SockAddrInet port (hostAddress addr))
-                 return sh)
-  _  <- forkFinally (copyWith (dump . Recv chan) sh stdout) (\_ -> term c chan)
+  addr  <- getHostByName host
+  sh    <- socket AF_INET Stream proto
+  setLinger sh (Just 1)
   atomically $ modifyTVar (conns c) (M.insert (ch chan) sh)
-  return ()
+  void $ forkFinally (do
+    connect sh (SockAddrInet port (hostAddress addr))
+    copyWith (dump . Recv chan) sh stdout) (\_ -> term c chan)
 exec c m@(Term chan)                           = do
-  _ <- term c chan
+  void $ term c chan
   notice slaveToken $ "iothread: " ++ show m
 exec c (Send chan msg)                         = do
   mfh <- atomically $ select c chan
