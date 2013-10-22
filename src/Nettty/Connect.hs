@@ -40,7 +40,6 @@ import           Nettty.Common
 import           Network.Socket
 import           Nettty.Protocol
 import qualified Data.ByteString as B
-import           Control.Exception
 import           Control.Concurrent
 import           Network.Socket.Options
 import           Control.Concurrent.STM
@@ -84,24 +83,33 @@ term c chan = do
   ok <- termQ c chan
   when ok (sendmsg (Term chan))
 
-exec :: Connections -> Message -> IO ()
-exec c m@(Open chan (TCP host port))           = do
-  notice slaveToken $ "iothread: " ++ show m
+tcpConnect :: Connections -> Channel -> String -> PortNumber -> IO ()
+tcpConnect c chan host port = do
   proto <- getProtocolNumber "tcp"
   addr  <- getHostByName host
   sh    <- socket AF_INET Stream proto
   setLinger sh (Just 1)
+  connect sh (SockAddrInet port (hostAddress addr))
   atomically $ modifyTVar (conns c) (M.insert (ch chan) sh)
-  void $ forkFinally (do
-    connect sh (SockAddrInet port (hostAddress addr))
-    copyWith (dump . Recv chan) sh stdout) (\_ -> term c chan)
+  void $ forkFinally
+    (copyWith (dump . Recv chan) sh stdout)
+    (\_ -> term c chan)
+
+exec :: Connections -> Message -> IO ()
+exec c m@(Open chan (TCP host port))           =
+  void $ forkIO $ do
+    notice slaveToken $ "iothread: " ++ show m
+    tcpConnect c chan host port
+    sendmsg (Recv chan "done")
+exec c m@(Open chan (HTTPConnect host port))   = do
+  void $ forkIO $ do
+    notice slaveToken $ "iothread: " ++ show m
+    tcpConnect c chan host port
+    sendmsg (Recv chan "HTTP/1.0 200 OK\r\n\r\n")
 exec c m@(Term chan)                           = do
   void $ term c chan
   notice slaveToken $ "iothread: " ++ show m
 exec c (Send chan msg)                         = do
   mfh <- atomically $ select c chan
   when (isJust mfh) (iowrite (fromJust mfh) msg)
-exec c (Open chan (HTTPConnect host port))     = do
-  sendmsg (Recv chan "HTTP/1.0 200 OK\r\n\r\n")
-  exec c (Open chan (TCP host port))
 exec _ _                                       = return ()

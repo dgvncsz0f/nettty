@@ -44,4 +44,7 @@ main = do
   hSetBuffering stdout NoBuffering
   hSetBuffering stderr LineBuffering
   B.hPutStr fh (pack $ e ++ "\n")
-  forkWait2 (copy stdin fh) (copy fh stdout)
+  done <- B.hGetSome stdin 4
+  case done of
+    "done" -> forkWait2 (copy stdin fh) (copy fh stdout)
+    _      -> error "could not connect"
