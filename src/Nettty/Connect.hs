@@ -30,7 +30,7 @@ module Nettty.Connect
        , start
        ) where
 
-import           Network
+import           Network as N
 import           System.IO
 import           Data.Maybe
 import           Network.BSD
@@ -75,7 +75,7 @@ destroy c k = do
 termQ :: Connections -> Channel -> IO Bool
 termQ c chan = do
   mfh <- atomically $ destroy c chan
-  when (isJust mfh) (sClose (fromJust mfh))
+  when (isJust mfh) (N.sClose (fromJust mfh))
   return (isJust mfh)
 
 term :: Connections -> Channel -> IO ()
