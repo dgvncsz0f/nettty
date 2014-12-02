@@ -15,14 +15,14 @@ firewall is everywhere:
 
          +-- +                 +-------+
          | f |        +------->+   B   |
-         | i |        |        |       |
-         | r |    +---+---+    +-------+
-         | e |    |   A   |     +-------+
-         | w +<-->+       +---->+   C   |
-         | a |    +---+---+     |       |
-         | l |        |         +-------+
-         | l |        |          +-------+
-         +-- +        |          |   D   |
++---+    | i |        |        |       |
+| C |    | r |    +---+---+    +-------+
+| L |    | e |    |   A   |     +-------+
+| I |----| w +<-->+       +---->+   C   |
+| E |    | a |    +---+---+     |       |
+| N |    | l |        |         +-------+
+| T |    | l |        |          +-------+
++---+    +-- +        |          |   D   |
                       +--------->+       |
                                  +-------+  
 
@@ -39,7 +39,7 @@ This is a viable solution, but suppose is currently unavailable:
   local $ tsocks ssh B
   local $ tsocks ssh C
 
-This would work too, but is also unavailable:
+This would work too, but suppose is not available either:
 ::
 
   local $ ssh -L 2222:B:22 -L 2223:C:22 -N -f A
