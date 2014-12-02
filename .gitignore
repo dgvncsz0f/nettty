@@ -3,3 +3,6 @@
 /src/Nettty/nettty
 /src/Nettty/nettty-connect
 /src/Nettty/nettty-proxy
+/.cabal-sandbox/
+/cabal.sandbox.config
+/dist/

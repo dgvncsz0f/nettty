@@ -160,4 +160,6 @@ dgvncsz0f
 compiling
 =========
 
-TODO:cabal
+    $ cabal sandbox init
+    $ cabal install --only-dependencies
+    $ cabal build

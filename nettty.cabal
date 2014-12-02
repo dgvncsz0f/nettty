@@ -1,0 +1,49 @@
+name:          nettty
+author:        DiegoSouza
+license:       GPL-3
+version:       0.0.1
+synopsis:      Network over (t̶t̶y̶) stdio
+homepage:      http://github.com/dgvncsz0f/nettty
+category:      Network
+maintainer:    DiegoSouza
+build-type:    Simple
+description:   no comments
+license-file:  LICENSE
+cabal-version: >= 1.16
+
+source-repository head
+  type:     git
+  branch:   master
+  location: git://github.com/dgvncsz0f/nettty.git
+
+executable nettty
+  main-is:         Nettty/nettty.hs
+  ghc-options:     -threaded -rtsopts -W
+  build-depends:    base                   (>= 4        && < 5)
+                  , stm
+                  , network
+                  , attoparsec
+                  , bytestring
+                  , containers
+                  , base64-bytestring
+                  , network-socket-options
+  hs-source-dirs:   src
+  default-language: Haskell2010
+
+executable nettty-proxy
+  main-is:         Nettty/nettty-proxy.hs
+  ghc-options:     -threaded -rtsopts -W
+  build-depends:    base                   (>= 4        && < 5)
+                  , stm
+                  , unix
+                  , network
+                  , process
+                  , directory
+                  , attoparsec
+                  , bytestring
+                  , containers
+                  , base64-bytestring
+                  , network-socket-options
+  hs-source-dirs:   src
+  default-language: Haskell2010
+
